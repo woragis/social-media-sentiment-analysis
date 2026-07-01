@@ -18,6 +18,7 @@ nltk.download('wordnet')
 
 3. **Configure API keys:**
    - Create `config/api_keys.json`
+   - This file is ignored by `.gitignore`; keep credentials local
    - Add Twitter API credentials:
    ```json
    {
@@ -35,18 +36,13 @@ nltk.download('wordnet')
 ### Data Collection
 
 **Collect Twitter data:**
-```bash
-python src/data_collection.py
-```
-
-Or specify keywords and count:
 ```python
-from src.data_collection import collect_twitter_data
+from app.data_collection import collect_historical_data
 
-tweets = collect_twitter_data(
-    keywords=['your_brand', '#yourhashtag'],
-    count=10000,
-    lang='en'
+tweets = collect_historical_data(
+    keywords=["your_brand", "#yourhashtag"],
+    count_per_keyword=10000,
+    use_cache=True
 )
 ```
 
@@ -79,7 +75,7 @@ This will:
 
 ```
 social-media-sentiment-analysis/
-├── src/                    # Core modules
+├── app/                    # Core modules
 │   ├── data_collection.py
 │   ├── text_preprocessing.py
 │   ├── sentiment_analysis.py
@@ -106,32 +102,32 @@ social-media-sentiment-analysis/
 You can also use the modules independently:
 
 ```python
-from src.data_collection import collect_twitter_data
-from src.text_preprocessing import preprocess_text
-from src.sentiment_analysis import analyze_sentiment
-from src.trend_analysis import analyze_trends
+from app.data_collection import collect_historical_data
+from app.text_preprocessing import preprocess_pipeline
+from app.sentiment_analysis import analyze_dataframe_sentiment
+from app.trend_analysis import aggregate_sentiment_by_time
 
-tweets = collect_twitter_data(['keyword'], count=1000)
-cleaned = preprocess_text(tweets['text'])
-sentiment = analyze_sentiment(cleaned)
-trends = analyze_trends(sentiment, tweets['timestamp'])
+tweets = collect_historical_data(["keyword"], count_per_keyword=1000)
+tweets = preprocess_pipeline(tweets, text_column="text")
+tweets = analyze_dataframe_sentiment(tweets, text_column="cleaned_text")
+trends = aggregate_sentiment_by_time(tweets, freq="D")
 ```
 
 ## Example: Quick Analysis
 
 ```python
 import pandas as pd
-from src.data_collection import collect_twitter_data
-from src.text_preprocessing import preprocess_text
-from src.sentiment_analysis import analyze_sentiment
+from app.data_collection import collect_historical_data
+from app.text_preprocessing import preprocess_pipeline
+from app.sentiment_analysis import analyze_dataframe_sentiment
 
-tweets = collect_twitter_data(['your_brand'], count=1000)
-tweets['cleaned_text'] = tweets['text'].apply(preprocess_text)
-tweets['sentiment'] = tweets['cleaned_text'].apply(analyze_sentiment)
+tweets = collect_historical_data(["your_brand"], count_per_keyword=1000)
+tweets = preprocess_pipeline(tweets, text_column="text")
+tweets = analyze_dataframe_sentiment(tweets, text_column="cleaned_text")
 
-positive = tweets[tweets['sentiment'] > 0.1]
-negative = tweets[tweets['sentiment'] < -0.1]
-neutral = tweets[(tweets['sentiment'] >= -0.1) & (tweets['sentiment'] <= 0.1)]
+positive = tweets[tweets["polarity"] > 0.1]
+negative = tweets[tweets["polarity"] < -0.1]
+neutral = tweets[(tweets["polarity"] >= -0.1) & (tweets["polarity"] <= 0.1)]
 
 print(f"Positive: {len(positive)} ({len(positive)/len(tweets)*100:.1f}%)")
 print(f"Negative: {len(negative)} ({len(negative)/len(tweets)*100:.1f}%)")
@@ -203,4 +199,3 @@ Edit sentiment analysis parameters:
 3. Check [DATA_ANALYSIS.md](DATA_ANALYSIS.md) for analysis framework
 4. Explore Jupyter notebooks in `notebooks/` directory
 5. Customize for your brand/keywords
-
