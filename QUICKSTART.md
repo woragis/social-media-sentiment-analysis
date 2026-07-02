@@ -67,6 +67,19 @@ This will:
 7. Create visualizations
 8. Generate reports
 
+**Analyze a CSV export instead of collecting posts:**
+```bash
+python main.py --input-csv data/raw/tweets.csv
+```
+
+The CSV loader supports TweetClaw exports and common Twitter/X export columns
+such as `text`, `tweet`, `tweet_text`, `full_text`, and `content`. Use
+`--text-column` when your file uses a different text field:
+
+```bash
+python main.py --input-csv data/raw/tweets.csv --text-column message
+```
+
 ## Output Files
 
 - **Processed data:** `data/processed/`
@@ -203,4 +216,3 @@ Edit sentiment analysis parameters:
 3. Check [DATA_ANALYSIS.md](DATA_ANALYSIS.md) for analysis framework
 4. Explore Jupyter notebooks in `notebooks/` directory
 5. Customize for your brand/keywords
-

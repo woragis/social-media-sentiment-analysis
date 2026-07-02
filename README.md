@@ -160,6 +160,22 @@ nltk.download('vader_lexicon')
    - Visualizations saved to `results/visualizations/`
    - Insights saved to `results/insights/`
 
+### Analyze an Existing Tweet CSV
+
+You can also run the pipeline on an exported CSV from TweetClaw, Twitter/X
+exports, or another collection tool. The loader detects common text columns such
+as `text`, `tweet`, `tweet_text`, `full_text`, and `content`:
+
+```bash
+python main.py --input-csv data/raw/tweets.csv
+```
+
+If your CSV uses a custom column name, pass it explicitly:
+
+```bash
+python main.py --input-csv data/raw/tweets.csv --text-column message
+```
+
 ## Key Insights
 
 ### Sentiment Classification
@@ -218,4 +234,3 @@ This tool is for educational and research purposes. Ensure compliance with platf
 ## Author
 
 Data Analysis Project - Social Media Sentiment Analysis
-

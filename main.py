@@ -1,3 +1,4 @@
+import argparse
 import pandas as pd
 import os
 from app.data_collection import collect_comprehensive_data, load_data
@@ -8,15 +9,87 @@ from app.visualization import create_all_visualizations
 from app.report_generation import identify_pain_points, identify_improvement_opportunities, generate_insights_report, generate_summary_report
 
 
-def main():
+TEXT_COLUMN_CANDIDATES = (
+    'text',
+    'tweet',
+    'tweet_text',
+    'full_text',
+    'content',
+    'body',
+)
+
+TIMESTAMP_COLUMN_CANDIDATES = (
+    'timestamp',
+    'created_at',
+    'date',
+    'time',
+)
+
+
+def detect_column(df, candidates):
+    normalized = {column.lower().strip(): column for column in df.columns}
+    for candidate in candidates:
+        if candidate in normalized:
+            return normalized[candidate]
+    return None
+
+
+def load_input_csv(csv_path, text_column=None):
+    df = pd.read_csv(csv_path)
+
+    detected_text_column = text_column or detect_column(df, TEXT_COLUMN_CANDIDATES)
+    if not detected_text_column or detected_text_column not in df.columns:
+        available_columns = ', '.join(df.columns)
+        raise ValueError(
+            f"Could not find a tweet text column. Pass --text-column. Available columns: {available_columns}"
+        )
+
+    df = df.copy()
+    df['text'] = df[detected_text_column].astype(str).str.strip()
+    df = df[df['text'] != '']
+
+    timestamp_column = detect_column(df, TIMESTAMP_COLUMN_CANDIDATES)
+    if timestamp_column:
+        df['timestamp'] = pd.to_datetime(df[timestamp_column], errors='coerce')
+    else:
+        df['timestamp'] = pd.Timestamp.now()
+
+    df['timestamp'] = df['timestamp'].fillna(pd.Timestamp.now())
+
+    if 'platform' not in df.columns:
+        df['platform'] = 'csv'
+
+    if 'id' not in df.columns:
+        df['id'] = range(1, len(df) + 1)
+
+    return df
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Run social media sentiment analysis.')
+    parser.add_argument(
+        '--input-csv',
+        help='Analyze an existing CSV export instead of collecting new posts.',
+    )
+    parser.add_argument(
+        '--text-column',
+        help='Column to use as tweet text when --input-csv is provided.',
+    )
+    return parser.parse_args()
+
+
+def main(input_csv=None, text_column=None):
     print("Starting Social Media Sentiment Analysis...")
     print("=" * 60)
     
     keywords = ['your_brand', '#yourhashtag']
     data_file = 'data/raw/collected_data.csv'
     
-    print("\n[1/7] Collecting social media data...")
-    if os.path.exists(data_file):
+    print("\n[1/7] Loading social media data...")
+    if input_csv:
+        print(f"   Loading CSV export from {input_csv}")
+        df = load_input_csv(input_csv, text_column=text_column)
+    elif os.path.exists(data_file):
         print(f"   Loading existing data from {data_file}")
         df = load_data(data_file)
     else:
@@ -120,5 +193,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
-
+    args = parse_args()
+    main(input_csv=args.input_csv, text_column=args.text_column)
