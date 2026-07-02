@@ -93,6 +93,20 @@ def analyze_dataframe_sentiment(df: pd.DataFrame,
     df = df.copy()
     
     print(f"Analyzing sentiment for {len(df)} posts...")
+
+    if df.empty:
+        print("No posts available for sentiment analysis.")
+        return df.assign(
+            polarity=pd.Series(dtype=float),
+            sentiment=pd.Series(dtype=str),
+            confidence=pd.Series(dtype=float),
+            textblob_polarity=pd.Series(dtype=float),
+            textblob_subjectivity=pd.Series(dtype=float),
+            vader_compound=pd.Series(dtype=float),
+            vader_positive=pd.Series(dtype=float),
+            vader_neutral=pd.Series(dtype=float),
+            vader_negative=pd.Series(dtype=float),
+        )
     
     sentiment_results = df[text_column].apply(
         lambda x: analyze_sentiment_combined(x, method=method, threshold=threshold)
@@ -116,6 +130,20 @@ def get_sentiment_summary(df: pd.DataFrame) -> Dict:
         return {}
     
     total = len(df)
+
+    if total == 0:
+        return {
+            'total_posts': 0,
+            'positive_count': 0,
+            'negative_count': 0,
+            'neutral_count': 0,
+            'positive_percentage': 0,
+            'negative_percentage': 0,
+            'neutral_percentage': 0,
+            'average_polarity': 0,
+            'average_confidence': 0,
+            'overall_sentiment': 'neutral'
+        }
     
     positive = len(df[df['sentiment'] == 'positive'])
     negative = len(df[df['sentiment'] == 'negative'])
@@ -150,4 +178,3 @@ def get_high_confidence_posts(df: pd.DataFrame, min_confidence: float = 0.7) -> 
         return pd.DataFrame()
     
     return df[df['confidence'] >= min_confidence].copy()
-
